@@ -1,0 +1,54 @@
+// Prisma schema — Tianming Lottery Analyzer (spec §2.1–2.2)
+// HARD RULE (§4.21.4): every lottery number is a String to preserve leading zeros.
+// Excel is the import source only; Postgres is the canonical operational store.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// One historical draw (งวด). Numbers are char/String, never Int.
+model Draw {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @unique @db.Date // งวดวันที่
+  six       String?  // แสดงตัวเลข 6 หลัก
+  top3      String?  // 3 บน
+  top2      String?  // 2 บน
+  bottom2   String?  // 2 ล่าง
+  set1      String?  // 3 ล่าง ชุด 1
+  set2      String?  // 3 ล่าง ชุด 2 (nullable — ว่างตามกติกาก่อนปี 2015)
+  set3      String?  // 3 ล่าง ชุด 3
+  set4      String?  // 3 ล่าง ชุด 4
+  drawTime  String?  // เวลาสร้างตัวเลข (HH:MM)
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+/// Snapshot of a data-quality import run (§PHASE-1 report + grade A–D).
+model ImportRun {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  totalRows    Int
+  validRows    Int
+  dateErrors   Int
+  lengthErrors Int
+  duplicates   Int
+  set2Nulls    Int
+  grade        String // A | B | C | D
+  reportText   String
+}
+
+/// Optional audit trail of engine calls surfaced through the web app (§4.21.18).
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  action    String // predict | backtest | export
+  inputJson String
+  modelStatus String
+  failureState String
+}

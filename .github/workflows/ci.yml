@@ -1,0 +1,32 @@
+name: CI
+on:
+  push:
+  pull_request:
+
+jobs:
+  engine-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build engine (dev) image
+        run: docker build --build-arg INSTALL_DEV=true -t tianming-engine-dev services/engine
+      - name: Run golden + backtest + api tests
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/services/engine:/app" \
+            -v "${{ github.workspace }}/data/thai.xlsx:/data/thai.xlsx:ro" \
+            -e TIANMING_DATA_XLSX=/data/thai.xlsx \
+            -w /app tianming-engine-dev pytest -q
+
+  web-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build Next.js
+        working-directory: apps/web
+        run: |
+          npm install --no-audit --no-fund
+          npm run build

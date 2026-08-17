@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  font-family: Tahoma, "Segoe UI", sans-serif;
+  background: #071634;
+  color: #eef2fb;
+}
+
+.card {
+  @apply rounded-xl border border-gold/30 bg-navy/60 p-4 shadow-lg;
+}
+.btn {
+  @apply rounded-lg bg-gold px-4 py-2 font-semibold text-navy transition hover:brightness-110 disabled:opacity-50;
+}
+.badge {
+  @apply inline-block rounded-full border border-gold/50 px-3 py-1 text-xs font-semibold text-gold;
+}
+th, td {
+  @apply border border-white/10 px-2 py-1 text-sm;
+}
