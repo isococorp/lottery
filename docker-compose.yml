@@ -1,45 +1,80 @@
-services:
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: tianming
-      POSTGRES_PASSWORD: tianming
-      POSTGRES_DB: tianming
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tianming"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
+# Tianming Lottery Analyzer — VPS deployment.
+#
+# No postgres service here: the stack reuses the already-running `bazi-db`
+# container, reached over the pre-existing external network `bazi_baznet`.
+# Create it once (if it does not exist yet) with:
+#   docker network create bazi_baznet
+# and make sure bazi-db is attached to it:
+#   docker network connect bazi_baznet bazi-db
+#
+# Only the web UI is published, on loopback only — put nginx/Caddy in front
+# of 127.0.0.1:3001 for TLS.
 
+name: lottery
+
+services:
   engine:
     build:
       context: ./services/engine
       args:
         INSTALL_DEV: "false"
+    container_name: lottery-engine
+    restart: unless-stopped
     environment:
       TIANMING_DATA_XLSX: /data/thai.xlsx
     volumes:
       - ./data:/data:ro
-    ports:
-      - "8000:8000"
-    depends_on:
-      postgres:
-        condition: service_healthy
+    # Deliberately no `ports:` — the engine is internal, reachable only as
+    # http://lottery-engine:8000 from inside bazi_baznet.
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health').read()"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - bazi_baznet
 
   web:
     build:
-      context: ./apps/web
+      # Root context: the Dockerfile needs packages/db/prisma/schema.prisma.
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: lottery-web
+    restart: unless-stopped
     environment:
-      ENGINE_URL: http://engine:8000
-      DATABASE_URL: postgresql://tianming:tianming@postgres:5432/tianming
+      NODE_ENV: production
+      ENGINE_URL: http://lottery-engine:8000
+      # Host `bazi-db` resolves on bazi_baznet, e.g.
+      #   postgresql://tianming:secret@bazi-db:5432/tianming?schema=public
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must point at the existing bazi-db container}
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET must be set for NextAuth}
+      AUTH_URL: ${AUTH_URL:-}
+      AUTH_TRUST_HOST: "true"
+      SESSION_TTL_HOURS: ${SESSION_TTL_HOURS:-8}
+      AUDIT_LOG_DIR: /app/logs
+      AUDIT_LOG_RETENTION_DAYS: ${AUDIT_LOG_RETENTION_DAYS:-90}
+      LINE_CLIENT_ID: ${LINE_CLIENT_ID:-}
+      LINE_CLIENT_SECRET: ${LINE_CLIENT_SECRET:-}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-}
+    volumes:
+      - web-logs:/app/logs
     ports:
-      - "3000:3000"
+      # Loopback only — never 0.0.0.0.
+      - "127.0.0.1:3001:3000"
     depends_on:
-      - engine
+      engine:
+        condition: service_healthy
+    networks:
+      - bazi_baznet
+
+networks:
+  bazi_baznet:
+    external: true
+    name: bazi_baznet
 
 volumes:
-  pgdata:
+  web-logs:

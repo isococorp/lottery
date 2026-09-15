@@ -1,7 +1,8 @@
 // Prisma schema — Tianming Lottery Analyzer (spec §2.1–2.2)
 // HARD RULE (§4.21.4): every lottery number is a String to preserve leading zeros.
 // Excel is the import source only; DB is the canonical operational store.
-// NOTE: Using SQLite for dev. Switch provider to "postgresql" + restore @db.Date and enums for production.
+// NOTE: Postgres is the canonical store (dev + prod). Draw.date is @db.Date — a calendar งวด
+// has no time component, and DATE avoids timezone drift on the @unique key.
 
 generator client {
   provider = "prisma-client-js"
@@ -14,14 +15,14 @@ generator webClient {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 /// One historical draw (งวด). Numbers are char/String, never Int.
 model Draw {
   id        Int      @id @default(autoincrement())
-  date      DateTime @unique // งวดวันที่
+  date      DateTime @unique @db.Date // งวดวันที่
   six       String?  // แสดงตัวเลข 6 หลัก
   top3      String?  // 3 บน
   top2      String?  // 2 บน
