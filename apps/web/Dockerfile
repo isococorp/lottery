@@ -27,7 +27,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ARG DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build"
 ENV DATABASE_URL=$DATABASE_URL
 # Prisma client must exist before `next build` — route handlers import it.
-RUN npx prisma generate --schema=/app/packages/db/prisma/schema.prisma
+RUN ./node_modules/.bin/prisma generate --schema=/app/packages/db/prisma/schema.prisma
 RUN npm run build
 
 FROM node:20-slim AS runner
