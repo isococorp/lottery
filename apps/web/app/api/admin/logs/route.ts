@@ -27,9 +27,10 @@ export async function GET(req: NextRequest) {
   const from = sp.get("from");
   const to = sp.get("to");
   if (from || to) {
-    where.timestamp = {};
-    if (from) where.timestamp.gte = new Date(from);
-    if (to) where.timestamp.lte = new Date(to);
+    const timestamp: { gte?: Date; lte?: Date } = {};
+    if (from) timestamp.gte = new Date(from);
+    if (to) timestamp.lte = new Date(to);
+    where.timestamp = timestamp;
   }
 
   const targetType = sp.get("targetType");
