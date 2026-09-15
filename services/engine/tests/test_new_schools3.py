@@ -28,20 +28,45 @@ def test_xuankong_golden():
     assert r.set3 == ["299", "162", "020", "992"]
 
 
-def test_qimen_golden():
+def test_qimen_golden_full_paipan():
+    """Full 拆補 chart for 2026-08-16 16:00 (hand-verified against the classical
+    method): 立秋 陰遁, 符頭 己未 → 下元, 局 8; 值符宮 8, 值使宮 9."""
     r = school_qimen.generate(DT, P)
-    assert (r.factors["xun_head"], r.factors["hour_palace"],
-            r.factors["chief"], r.factors["envoy"]) == (6, 9, 8, 6)
-    assert (r.top3, r.top2, r.bottom2) == ("869", "86", "96")
-    assert r.set3 == ["869", "686", "981", "029"]
+    assert r.factors["term"] == "立秋"
+    assert (r.factors["yuan"], r.factors["ju"], r.factors["dun"]) == (3, 8, "yin")
+    assert (r.factors["chief_palace"], r.factors["envoy_palace"], r.factors["xun"]) == (8, 9, 5)
+    assert (r.top3, r.top2, r.bottom2) == ("898", "89", "85")
+    assert r.set3 == ["898", "589", "881", "033"]
 
 
-def test_daliuren_golden():
+def test_qimen_yang_dun_case():
+    # 1996-01-16: 小寒 (陽遁), 符頭 branch in 子午卯酉 → 上元, 局 2.
+    dt = datetime.datetime(1996, 1, 16, 16, 0)
+    p = compute_pillars(1996, 1, 16, 16)
+    r = school_qimen.generate(dt, p)
+    assert r.factors["term"] == "小寒"
+    assert (r.factors["yuan"], r.factors["ju"], r.factors["dun"]) == (1, 2, "yang")
+
+
+def test_daliuren_golden_sanchuan():
+    """月將 by 中氣 rule (大暑→午) + 元首課 (single 上剋下) 三傳 午辰寅
+    — hand-verified for 2026-08-16 16:00."""
     r = school_daliuren.generate(DT, P)
     assert (r.factors["yue_jiang"], r.factors["shift"],
-            r.factors["lesson1_ganshang"], r.factors["lesson3_zhishang"]) == (6, 10, 9, 8)
-    assert (r.top3, r.top2, r.bottom2) == ("990", "98", "71")
-    assert r.set3 == ["711", "986", "098", "044"]
+            r.factors["lesson1_ganshang"], r.factors["lesson3_zhishang"]) == (7, 11, 10, 9)
+    assert r.factors["san_chuan"] == [7, 5, 3]           # 午 辰 寅
+    assert r.factors["san_chuan_method"] == "賊剋(上剋下)"
+    assert (r.top3, r.top2, r.bottom2) == ("101", "09", "81")
+    assert r.set3 == ["821", "753", "809", "063"]
+
+
+def test_daliuren_zei_ke_case():
+    # 1996-01-16: 下賊上 path; 月將 = 丑 (after 冬至 1995-12-22, before 大寒).
+    dt = datetime.datetime(1996, 1, 16, 16, 0)
+    p = compute_pillars(1996, 1, 16, 16)
+    r = school_daliuren.generate(dt, p)
+    assert r.factors["yue_jiang"] == 2                    # 丑
+    assert r.factors["san_chuan_method"].startswith("賊剋(下賊上)")
 
 
 def test_tongsheng_golden():

@@ -41,22 +41,24 @@ make import
 
 | การทดสอบ | ผล |
 |---|---|
-| Golden §C.9 (สี่เสา + พลังวัน 4 เวกเตอร์) | ✅ ผ่านครบ (เช่น 2026-08-16 → 壬戌, A=−4, B=+1, รวม −3) |
+| Golden §C.9 (สี่เสา + พลังวัน) | ✅ ผ่านครบ (เช่น 2026-08-16 → 壬戌, A=−4, B=+1, รวม −3; 2026-01-02 → 丙午 ไฟเปี้ย −5 ตามกฎ 小雪) |
 | Determinism (เรียกซ้ำ 100 ครั้ง) | ✅ ผลเดิม |
 | Leading zero (string ทุกจุด) | ✅ |
-| Backtest §C.11 (permutation, ถูก 2 ล่าง) | ✅ ตรงเป๊ะ: 20/708, 11/708, 18/708, 17/608, 12/708 |
-| p-value §C.11 (binomial two-sided) | ✅ 0.096 / 0.501 / 0.211 / 0.189 / 0.890 |
+| Backtest §C.11 (permutation, ถูก 2 ล่าง) | ✅ 17/708, 11/708, 18/708, 17/608, 12/708 (ดวงจีน = 17 ตามเสาปี 28 พ.ย. = d:\bazi; เดิม 20 ที่ลี่ชุน) |
+| p-value §C.11 (binomial two-sided) | ✅ 0.334 / 0.501 / 0.211 / 0.189 / 0.890 |
 | ชนะการสุ่ม (CI-low > baseline) | ✅ ทุกศาสตร์ = ไม่ (สอดคล้องจุดยืนระบบ) |
 
 **ศาสตร์ Production ปัจจุบัน = 18 วิชา:** §4.1–4.20 (ยกเว้น §4.13/4.14) — mapping ที่อนุมัติแล้ว
 มี golden test + ผ่าน backtest §6, ทั้งหมด win=False.
-§4.6/4.10/4.11 = faithful 排盤 · §4.7/4.8 = simplified · §4.17/4.20 = **Swiss Ephemeris** (pyswisseph,
-Moshier ในตัว ไม่ต้องมีไฟล์ข้อมูล; observer = Bangkok, Vedic ใช้ Lahiri sidereal) · ที่เหลือ numerology/อื่น ๆ.
-เหลือ Backlog 2 วิชา (§4.13/4.14 = NOT RECOMMENDED, spec ห้ามทำ deterministic) และ §4.21 = ชั้นวินัย V5 — รวม 21 วิชา.
+§4.6/4.10/4.11 = faithful 排盤 · §4.7 = **排盤เต็ม (拆補: 節氣三元局+符頭+值符/值使)** ·
+§4.8 = **四課ครบ + 三傳** (月將ตาม中氣; 賊剋/比用/涉害-孟仲季/遙剋/昴星) ·
+§4.17/4.20 = **Swiss Ephemeris ไฟล์ se1 จริง** (sepl_18+semo_18 ใน `services/engine/ephe`,
+fallback Moshier รายงานตามจริงใน factors; observer = Bangkok, Vedic = Lahiri sidereal) · ที่เหลือ numerology/อื่น ๆ.
+§4.21 = ชั้นวินัย V5 (ไม่สร้างเลข) — รวม 19 วิชาในระบบ. §4.13/4.14 ถูกตัดออกจากโปรเจกต์ (spec ห้ามทำเป็น deterministic module).
 
 ## หมายเหตุการออกแบบ (สมมติฐานที่ระบุชัด — guardrail #9)
 
-- **ปฏิทินจีน** ใช้ `sxtwl` (default `getYearGZ`/`getMonthGZ` เปลี่ยนที่ลี่ชุน/jie) — ตรงกับ golden ทุกวันที่. ชั่วโมงคำนวณเองตาม 五鼠遁 (§C.3).
+- **ปฏิทินจีน** ใช้ `sxtwl` สำหรับ วัน/เดือน (jie) และคำนวณชั่วโมงเองตาม 五鼠遁 (§C.3). **เฉพาะ "เสาปี" (year ganzhi) สลับที่ 28 พ.ย. แบบ fixed ตรงกับโปรแกรม bazi อ้างอิง (`D:\bazi`)** ไม่ใช่ลี่ชุน — ธันวาคม และ 28–30 พ.ย. นับเป็นปีถัดไป. **"เสาเดือน" คงตาม 立春-based 五虎遁** (ยืนยัน 17 ม.ค. 2569 → ซิง 0; 2 ม.ค. 2569 → 丙午 ไฟเปี้ย −5). เมทริกซ์คะแนน + การรวม A/B ตรงกับ `D:\bazi` และ **ผลกำลังตรงกันครบทั้ง 708 งวด**. ค่า backtest §C.11 ของ **ดวงจีน** = 17/708 (p≈0.334) แทน 20/708 (ลี่ชุน) — ศาสตร์อื่นไม่เปลี่ยน.
 - **สถิติ WF tie-break:** "ค่าที่ออกบ่อยสุด" ใช้ `Counter.most_common` (ค่าที่ถึง max ก่อนตามลำดับเวลา) — เป็นค่าที่ reproduce §C.11 (17/608) พอดี ต่างจากนี้ได้ตัวเลขไม่ตรง.
 - **p-value:** binomial **two-sided** ที่ baseline เฉลี่ยต่อศาสตร์ — reproduce ค่าอ้างอิง §C.11 ครบทั้ง 5.
 - **baseline ชุด 3 ตัว:** ยกกำลัง `k` (จำนวนชุดจริงของงวดนั้น) ตาม §C.10 — มี regression test กันบั๊กที่เคยทำให้ p-value พังทั้งตาราง.
@@ -68,7 +70,7 @@ Moshier ในตัว ไม่ต้องมีไฟล์ข้อมู�
 
 ## สถานะ / ข้อจำกัด
 
-- **ศาสตร์ครบ 18/21 วิชา (Production)** — เหลือเพียง §4.13/4.14 ที่ spec สั่งห้ามทำเป็น deterministic (ไม่มีสูตรตรวจสอบได้) และ §4.21 = ชั้นวินัย V5. ทุกวิชาที่เพิ่มมี golden test + ผ่าน backtest §6 (win=False ทุกตัว).
+- **ศาสตร์ 18 วิชา Production** (จาก 19 วิชาในระบบ; อีก 1 คือ §4.21 ชั้นวินัย V5) — ทุกวิชามี golden test + ผ่าน backtest §6 (win=False ทุกตัว). §4.13/4.14 ถูกตัดออกจากโปรเจกต์ (spec สั่งห้ามทำเป็น deterministic module).
 - **Data layer:** Excel → Postgres รันจริงแล้ว (`packages/db` : `prisma db push` + `tsx import.ts`) — 708 งวดใน Postgres, เกรด B, มี `ImportRun` audit record. Engine อ่านประวัติจาก `data/thai.xlsx` โดยตรง (self-contained); Postgres เป็น store ของฝั่ง web.
 - **§4.21.6 Baseline Models (6 ชุด):** Random / Long-Freq / Recent-Freq / EMA / Gap-Overdue / Simple-Ensemble — walk-forward ชั้น 2, มี Baseline Comparison ในหน้า Backtest (§4.21.10). ทุก baseline win=False → ยืนยัน Advanced Ensemble ไม่ให้ค่าเพิ่ม.
 - **§4.4-EXT หมวด M (ML models):** walk-forward, no-leakage, multiclass ทำนาย 2ล่าง — รันจริง **9 โมเดล** ที่ endpoint `/ml` (หนัก, cached; ปุ่มโหลดแยกในหน้า Backtest): sklearn 5 (LogReg/RandomForest/kNN/GradientBoosting/GaussianNB), **XGBoost** (LabelEncoder wrapper), และ DL **LSTM/GRU/Transformer** (torch CPU: embedding→sequence encoder→linear, Adam/CrossEntropy). ทุกโมเดล **win=False**. โครง `_unavailable_models()` ยังคงรายงาน `NOT AVAILABLE` ตามจริงหาก dependency หาย (§4.21.7 — ไม่ mock).

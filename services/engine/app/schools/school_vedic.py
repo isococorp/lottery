@@ -10,7 +10,7 @@ import datetime
 import swisseph as swe
 
 from .base import SchoolResult
-from ._swe_helpers import jd_ut, longitude
+from ._swe_helpers import jd_ut, longitude, ephemeris_source
 
 _NAK = 360 / 27          # 13°20' per nakshatra
 _PADA = _NAK / 4         # 3°20' per pada
@@ -38,5 +38,6 @@ def generate(dt: datetime.datetime) -> SchoolResult:
         f"{N % 10}{Ti % 10}{Yo % 10}",
         f"{(Ti * 10 + Pd) % 1000:03d}",
     ]
-    factors = {"nakshatra": N, "pada": Pd, "tithi": Ti, "yoga": Yo, "moon_rashi": Ra}
+    factors = {"nakshatra": N, "pada": Pd, "tithi": Ti, "yoga": Yo, "moon_rashi": Ra,
+               "ephemeris": ephemeris_source()}
     return SchoolResult("4.20", "Vedic Astro", top3, top2, bottom2, set3, factors)

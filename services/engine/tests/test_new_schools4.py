@@ -12,6 +12,13 @@ from app.schools import school_western, school_vedic
 DT = datetime.datetime(2026, 8, 16, 16, 0)
 
 
+def test_ephemeris_uses_real_se1_files():
+    # Fidelity: the real Swiss Ephemeris files ship in services/engine/ephe.
+    from app.schools._swe_helpers import ephemeris_source, _HAS_FILES
+    assert _HAS_FILES, "sepl_18.se1/semo_18.se1 missing from services/engine/ephe"
+    assert ephemeris_source() == "swiss(se1)"
+
+
 def test_western_golden():
     r = school_western.generate(DT)
     assert (r.factors["sun_sign"], r.factors["sun_deg"]) == (5, 23)    # Leo 23°

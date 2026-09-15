@@ -157,7 +157,7 @@ def _build_net(kind: str):
     return Net()
 
 
-def _run_torch(kind: str, draws: List[Draw], mode: str):
+def _run_torch(kind: str, draws: List[Draw], mode: str, start=None, end=None):
     """Walk-forward training of a sequence model over the last SEQ_LEN 2-ล่าง values."""
     import torch
     import torch.nn as nn
@@ -199,6 +199,10 @@ def _run_torch(kind: str, draws: List[Draw], mode: str):
                 loss.backward()
                 opt.step()
             model.eval()
+        # Window guard placed after refit so the model stays current even when
+        # earlier in-window draws are skipped.
+        if not metrics.in_window(draws[i].date, start, end):
+            continue
         with torch.no_grad():
             pred = int(model(torch.tensor([si], dtype=torch.long)).argmax(dim=1)[0])
         bottom2 = f"{pred % 100:02d}"
@@ -209,7 +213,7 @@ def _run_torch(kind: str, draws: List[Draw], mode: str):
     return metrics.summarize(f"{kind} 2ล่าง", hits, bps)
 
 
-def _run_one(name_label, make, X, y, draws, mode):
+def _run_one(name_label, make, X, y, draws, mode, start=None, end=None):
     n = len(draws)
     hits, bps = [], []
     model = None
@@ -224,6 +228,9 @@ def _run_one(name_label, make, X, y, draws, mode):
                 continue
             model = make()
             model.fit(np.array(tr_X), np.array(tr_y))
+        # Window guard after refit so a late window starts from a current model.
+        if not metrics.in_window(draws[i].date, start, end):
+            continue
         pred = int(model.predict(np.array([Xa[i]]))[0])
         bottom2 = f"{pred % 100:02d}"
         hb = metrics.hit_two(bottom2, draws[i].bottom2, mode)
@@ -233,17 +240,18 @@ def _run_one(name_label, make, X, y, draws, mode):
     return metrics.summarize(f"{name_label} 2ล่าง", hits, bps)
 
 
-def run_ml_backtest(draws: List[Draw], mode: str = "permutation") -> List[dict]:
+def run_ml_backtest(draws: List[Draw], mode: str = "permutation",
+                    start=None, end=None) -> List[dict]:
     ordered = sorted(draws, key=lambda d: d.date)
     X, y, _valid = _features(ordered)
     out = []
     # sklearn tabular models
     for code, name, make in _runnable_models():
-        m = _run_one(name, make, X, y, ordered, mode)
+        m = _run_one(name, make, X, y, ordered, mode, start, end)
         out.append({"code": code, "name": name, "status": "READY", "bottom2": m.as_dict()})
     # XGBoost (tabular) — real when the library is present
     if _xgb_available():
-        m = _run_one("XGBoost", _xgb_make, X, y, ordered, mode)
+        m = _run_one("XGBoost", _xgb_make, X, y, ordered, mode, start, end)
         out.append({"code": "M-XGB", "name": "XGBoost", "status": "READY",
                     "bottom2": m.as_dict()})
     # Deep-learning sequence models — real when torch is present
@@ -251,7 +259,7 @@ def run_ml_backtest(draws: List[Draw], mode: str = "permutation") -> List[dict]:
         for code, name, kind in [("M-LSTM", "LSTM", "lstm"),
                                  ("M-GRU", "GRU", "gru"),
                                  ("M-TF", "Transformer", "transformer")]:
-            m = _run_torch(kind, ordered, mode)
+            m = _run_torch(kind, ordered, mode, start, end)
             out.append({"code": code, "name": name, "status": "READY",
                         "bottom2": m.as_dict()})
     # Anything still missing is reported honestly (never mocked, §4.21.7)

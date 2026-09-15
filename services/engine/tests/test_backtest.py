@@ -14,9 +14,12 @@ from app.backtest.baselines import perm_count, p_any_set3
 
 DATA = os.environ.get("TIANMING_DATA_XLSX", "/data/thai.xlsx")
 
-# name -> (hits, n, p_value) for bottom-2, permutation mode (§C.11)
+# name -> (hits, n, p_value) for bottom-2, permutation mode (§C.11).
+# ดวงจีน (4.1) reflects the 小雪 year boundary (was 20/0.096 under 立春); the other
+# schools do not depend on the year pillar's stem/branch for 2-ล่าง, so they are
+# unchanged from the original §C.11 reference.
 REF = {
-    "ดวงจีน": (20, 708, 0.096),
+    "ดวงจีน": (17, 708, 0.334),
     "ดวงไทย": (11, 708, 0.501),
     "เลขศาสตร์": (18, 708, 0.211),
     "สถิติ WF": (17, 608, 0.189),

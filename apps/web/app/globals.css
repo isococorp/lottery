@@ -7,20 +7,92 @@
 }
 
 body {
-  font-family: Tahoma, "Segoe UI", sans-serif;
-  background: #071634;
+  font-family: "Prompt", Tahoma, "Segoe UI", sans-serif;
   color: #eef2fb;
+  min-height: 100vh;
+  background:
+    radial-gradient(1100px 560px at 12% -12%, rgba(201, 162, 75, 0.12), transparent 60%),
+    radial-gradient(1000px 520px at 108% -6%, rgba(45, 84, 160, 0.35), transparent 55%),
+    linear-gradient(180deg, #071634 0%, #050f24 55%, #040b1c 100%);
+  background-attachment: fixed;
 }
 
+/* Premium glass card */
 .card {
-  @apply rounded-xl border border-gold/30 bg-navy/60 p-4 shadow-lg;
+  @apply rounded-2xl border border-white/10 p-5;
+  background: linear-gradient(180deg, rgba(18, 35, 70, 0.72), rgba(10, 22, 48, 0.55));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 12px 34px -14px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
+
+/* Gold gradient button */
 .btn {
-  @apply rounded-lg bg-gold px-4 py-2 font-semibold text-navy transition hover:brightness-110 disabled:opacity-50;
+  @apply rounded-xl px-4 py-2 font-semibold text-navy transition;
+  background: linear-gradient(135deg, #e6c878 0%, #c9a24b 55%, #a8842f 100%);
+  box-shadow: 0 8px 22px -8px rgba(201, 162, 75, 0.55);
 }
+.btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+.btn:disabled {
+  opacity: 0.5;
+}
+/* Secondary / ghost button */
+.btn-ghost {
+  @apply rounded-xl border border-gold/40 px-4 py-2 font-medium text-gold-light transition;
+  background: rgba(201, 162, 75, 0.06);
+}
+.btn-ghost:hover {
+  background: rgba(201, 162, 75, 0.14);
+}
+
 .badge {
-  @apply inline-block rounded-full border border-gold/50 px-3 py-1 text-xs font-semibold text-gold;
+  @apply inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold;
+  border-color: rgba(201, 162, 75, 0.4);
+  color: #e6c878;
+  background: rgba(201, 162, 75, 0.08);
 }
-th, td {
-  @apply border border-white/10 px-2 py-1 text-sm;
+
+/* Tables */
+table {
+  @apply w-full border-collapse;
+}
+th,
+td {
+  @apply border border-white/10 px-3 py-2 text-sm;
+}
+th {
+  @apply font-semibold;
+}
+tbody tr {
+  transition: background 0.15s ease;
+}
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+/* Inputs */
+input,
+select {
+  color-scheme: dark;
+}
+input:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(201, 162, 75, 0.45);
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Brand wordmark gradient */
+.brand-grad {
+  background: linear-gradient(135deg, #f0d99a 0%, #c9a24b 60%, #a8842f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }

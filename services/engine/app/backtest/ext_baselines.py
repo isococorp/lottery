@@ -161,8 +161,12 @@ BASELINES = [
 ]
 
 
-def run_baseline_backtest(draws: List[Draw], mode: str = "permutation") -> List[dict]:
-    """Walk-forward backtest of the §4.21.6 baselines (bottom2 + set3 metrics)."""
+def run_baseline_backtest(draws: List[Draw], mode: str = "permutation",
+                          start=None, end=None) -> List[dict]:
+    """Walk-forward backtest of the §4.21.6 baselines (bottom2 + set3 metrics).
+
+    `start`/`end` restrict the scoring window only; history stays full.
+    """
     from . import baselines as base_p
     from . import metrics
 
@@ -172,6 +176,8 @@ def run_baseline_backtest(draws: List[Draw], mode: str = "permutation") -> List[
         b2_hits, b2_bp, s3_hits, s3_bp = [], [], [], []
         for i in range(WARMUP, len(ordered)):
             dr = ordered[i]
+            if not metrics.in_window(dr.date, start, end):
+                continue
             hist = ordered[:i]
             _t3, _t2, bottom2, set3 = fn(hist, dr)
             hb = metrics.hit_two(bottom2, dr.bottom2, mode)

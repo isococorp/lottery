@@ -11,6 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt \
 RUN pip install --no-cache-dir torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu
 
 COPY app ./app
+# Real Swiss Ephemeris data files (1800–2399) for §4.17/§4.20 fidelity.
+COPY ephe ./ephe
 
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 

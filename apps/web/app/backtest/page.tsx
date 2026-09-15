@@ -1,6 +1,8 @@
 "use client";
-import { useState } from "react";
-import { Warning, LayerBadge } from "@/components/Warning";
+import { useEffect, useState } from "react";
+import { LayerBadge } from "@/components/Warning";
+import { ThaiDateInput } from "@/components/ThaiDateInput";
+import { isoToThai } from "@/lib/thaiDate";
 
 export default function Backtest() {
   const [mode, setMode] = useState<"permutation" | "exact">("permutation");
@@ -9,6 +11,19 @@ export default function Backtest() {
   const [err, setErr] = useState<string | null>(null);
   const [ml, setMl] = useState<any>(null);
   const [mlLoading, setMlLoading] = useState(false);
+  // Optional scoring window (งวดเริ่มต้น/สิ้นสุด). Empty string = full series.
+  const [drawDates, setDrawDates] = useState<string[]>([]);
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+
+  useEffect(() => {
+    fetch("/api/dates")
+      .then((r) => r.json())
+      .then((j) => setDrawDates(j?.dates ?? []))
+      .catch(() => {});
+  }, []);
+
+  const windowBody = () => ({ mode, start: start || null, end: end || null });
 
   async function runMl() {
     setMlLoading(true);
@@ -16,7 +31,7 @@ export default function Backtest() {
       const r = await fetch("/api/ml", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mode }),
+        body: JSON.stringify(windowBody()),
       });
       setMl(await r.json());
     } catch (e: any) {
@@ -27,13 +42,17 @@ export default function Backtest() {
   }
 
   async function run() {
+    if (start && end && start > end) {
+      setErr("งวดเริ่มต้นต้องไม่หลังงวดสิ้นสุด");
+      return;
+    }
     setLoading(true);
     setErr(null);
     try {
       const r = await fetch("/api/backtest", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mode }),
+        body: JSON.stringify(windowBody()),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error ?? "error");
@@ -46,9 +65,7 @@ export default function Backtest() {
   }
 
   return (
-    <div className="space-y-4">
-      <Warning text={data?.v5?.warning} />
-
+    <div className="space-y-5">
       <div className="card flex flex-wrap items-center gap-3">
         <div className="inline-flex overflow-hidden rounded-lg border border-gold/40">
           {(["permutation", "exact"] as const).map((m) => (
@@ -58,6 +75,22 @@ export default function Backtest() {
             </button>
           ))}
         </div>
+        <label className="flex items-center gap-1 text-sm text-white/70">
+          งวดเริ่มต้น (พ.ศ.)
+          <ThaiDateInput value={start} onChange={setStart} options={drawDates}
+            className="rounded border border-gold/40 bg-navy px-2 py-1 text-white" />
+        </label>
+        <label className="flex items-center gap-1 text-sm text-white/70">
+          งวดสิ้นสุด (พ.ศ.)
+          <ThaiDateInput value={end} onChange={setEnd} options={drawDates}
+            className="rounded border border-gold/40 bg-navy px-2 py-1 text-white" />
+        </label>
+        {(start || end) && (
+          <button className="text-sm text-white/50 underline"
+            onClick={() => { setStart(""); setEnd(""); }}>
+            ล้างช่วง (ใช้ทั้งชุด)
+          </button>
+        )}
         <button className="btn" onClick={run} disabled={loading}>
           {loading ? "กำลังรัน…" : "รันทดสอบย้อนหลัง"}
         </button>
@@ -71,7 +104,8 @@ export default function Backtest() {
           <div className="mb-2">
             <LayerBadge level={3} label="หลักฐานสถิติ (walk-forward)" />
             <span className="ml-2 text-sm text-white/70">
-              โหมด {data.mode} · {data.n_draws} งวด · {data.date_range?.join(" .. ")}
+              โหมด {data.mode} · {data.n_draws} งวด · ช่วง{" "}
+              {(data.window ?? data.date_range)?.map((d: string) => isoToThai(d)).join(" .. ")}
             </span>
           </div>
           <table className="w-full border-collapse">
@@ -85,7 +119,7 @@ export default function Backtest() {
               {data.schools.map((s: any) =>
                 [["2 ล่าง", s.bottom2], ["3 ล่าง (4 ชุด)", s.set3]].map(([label, m]: any) => (
                   <tr key={s.code + label} className={m.beats_random ? "bg-green-500/10" : ""}>
-                    <td className="font-semibold text-gold">{s.name}</td>
+                    <td className="font-semibold text-gold">{s.code} {s.name}</td>
                     <td>{label}</td>
                     <td>{m.hits}/{m.n}</td>
                     <td>{(m.rate * 100).toFixed(2)}%</td>

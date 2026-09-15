@@ -49,9 +49,9 @@ PRODUCTION: List[Vicha] = [
     Vicha("4.6", "Zi Wei Dou Shu 紫微斗數", 3, Status.PRODUCTION,
           "排盤: 命宮/身宮/五行局(納音)/紫微/天府 (faithful)"),
     Vicha("4.7", "Qi Men Dun Jia 奇門遁甲", 3, Status.PRODUCTION,
-          "陰陽遁+旬首+時宮+值符/值使 (simplified — ไม่ทำ節氣三元局เต็ม)"),
+          "排盤เต็ม (拆補): 節氣三元局 + 符頭 + แผ่นดิน六仪三奇 + 值符/值使"),
     Vicha("4.8", "Da Liu Ren 大六壬", 3, Status.PRODUCTION,
-          "月將加時 + หัว四課 干上/支上神 (simplified — ไม่ทำ三傳)"),
+          "月將ตาม中氣 + 四課ครบ + 三傳 (賊剋/比用/涉害-孟仲季/遙剋/昴星)"),
     Vicha("4.9", "Mei Hua Yi Shu 梅花易數", 3, Status.PRODUCTION,
           "เลข起卦: 本卦 + 变卦 (พลิกเส้นเคลื่อน), ตรีลักษณ์ Fu Xi"),
     Vicha("4.10", "I Ching 易經 (64 卦)", 3, Status.PRODUCTION,
@@ -65,28 +65,25 @@ PRODUCTION: List[Vicha] = [
     Vicha("4.16", "Numerology — Chaldean", 3, Status.PRODUCTION,
           "ค่าตัวอักษร Chaldean 1–8 ของชื่อวัน EN + psychic (วัน) + destiny (วันที่)"),
     Vicha("4.17", "Western Astrology (12 ราศี)", 3, Status.PRODUCTION,
-          "Swiss Ephemeris: ราศี+องศา ของ Sun/Moon + Ascendant (Bangkok)"),
+          "Swiss Ephemeris (ไฟล์ se1 จริง): ราศี+องศา Sun/Moon + Ascendant (Bangkok)"),
     Vicha("4.18", "Biorhythm (ชีวจังหวะ)", 2, Status.PRODUCTION,
           "3 รอบไซน์ กาย/อารมณ์/สติปัญญา (23/28/33) อ้างอิง JDN เป็น epoch"),
     Vicha("4.19", "Tarot + Numerology", 3, Status.PRODUCTION,
           "จับคู่วันที่กับ Major Arcana 0–21 (Birth/Day/Hour card)"),
     Vicha("4.20", "Vedic Astrology (Jyotisha) + Panchanga", 3, Status.PRODUCTION,
-          "Swiss Ephemeris (Lahiri sidereal): Nakshatra+Pada/Tithi/Yoga/Rashi"),
+          "Swiss Ephemeris (ไฟล์ se1 จริง, Lahiri sidereal): Nakshatra+Pada/Tithi/Yoga/Rashi"),
 ]
 
-# §4.6–4.20 — Belief backlog (named, but no deterministic 7-value formula in spec)
-BACKLOG: List[Vicha] = [
-    Vicha("4.13", "เลขเด็ดจากสำนัก/พิธีกรรม", 3, Status.NOT_RECOMMENDED,
-          "ตีความสัญลักษณ์ ไม่มีสูตรตายตัว", "§4.13: ไม่แนะนำสร้างเป็น deterministic module (ตรวจสอบซ้ำไม่ได้)"),
-    Vicha("4.14", "เลขจากเหตุการณ์อ้างอิง", 3, Status.NOT_RECOMMENDED,
-          "ผูกกับเหตุการณ์ภายนอกรายวัน", "§4.14: ไม่แนะนำ (ต้องพึ่งข้อมูลเหตุการณ์ภายนอก)"),
-]
+# Belief backlog. §4.13/4.14 were removed from the project (spec forbids building
+# them as deterministic modules); no backlog schools remain.
+BACKLOG: List[Vicha] = []
 
 # §4.21 — V5 operating discipline (implemented as protocol/v5_gate.py; not a number school)
 DISCIPLINE = Vicha(
     "4.21", "Thai Lottery AI V5 — Statistical Operating Protocol", 2, Status.DISCIPLINE,
-    "ชั้นวินัยครอบทุกเอาต์พุตของ §4.4/§4.4-EXT (Self-Check 18, Failure States, Confidence, Banned Phrases)",
-    "ทำงานแล้วใน protocol/v5_gate.py — ไม่สร้าง 7 ค่าเอง (§4.21.27)",
+    "ชั้นวินัยครอบทุกเอาต์พุต (Self-Check 18, Failure States, Confidence, Banned Phrases)",
+    "ACTIVE — ห่อหุ้มทุก response ของ /predict, /backtest, /ml, /audit อยู่แล้ว "
+    "(ไม่สร้าง 7 ค่าเอง ตาม §4.21.27); ดูสถานะสดที่ badge '§4.21 V5' และหน้า 'ตรวจระบบ'",
 )
 
 
@@ -101,9 +98,8 @@ def full_catalog() -> dict:
             "backlog": len(BACKLOG),
             "discipline": 1,
         },
-        "note": ("จาก 21 วิชา (§5): 18 วิชามีสูตร deterministic ที่ตรวจสอบแล้ว (Production: "
-                 "§4.1–4.20 ยกเว้น §4.13/4.14; §4.17/4.20 ใช้ Swiss Ephemeris, "
-                 "§4.7/4.8 simplified, ที่เหลือ faithful/numerology), "
-                 "2 วิชาเป็น Backlog (§4.13/4.14 NOT RECOMMENDED — spec ห้ามทำ deterministic), "
-                 "และ 1 วิชาเป็นชั้นวินัย V5 (§4.21)."),
+        "note": ("19 วิชาในระบบ: 18 วิชามีสูตร deterministic ที่ตรวจสอบแล้ว (Production: "
+                 "§4.1–4.12 + §4.15–4.20; §4.17/4.20 ใช้ Swiss Ephemeris, "
+                 "§4.7/4.8 simplified, ที่เหลือ faithful/numerology) และ 1 วิชาเป็นชั้นวินัย V5 (§4.21). "
+                 "§4.13/4.14 ถูกตัดออกจากโปรเจกต์ (spec ห้ามทำเป็น deterministic module)."),
     }

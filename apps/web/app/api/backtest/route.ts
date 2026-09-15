@@ -5,7 +5,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const mode = body.mode === "exact" ? "exact" : "permutation";
-    const data = await enginePost("/backtest", { mode });
+    const start = body.start || null;
+    const end = body.end || null;
+    const data = await enginePost("/backtest", { mode, start, end });
     return NextResponse.json(data);
   } catch (e: any) {
     return NextResponse.json({ error: String(e?.message ?? e) }, { status: 502 });

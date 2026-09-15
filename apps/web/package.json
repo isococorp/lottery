@@ -9,16 +9,21 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@prisma/client": "^7.9.1",
+    "argon2": "^0.45.1",
     "next": "14.2.15",
     "next-auth": "5.0.0-beta.25",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/react": "^18.3.3",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
+    "prisma": "^5.22.0",
     "tailwindcss": "^3.4.14",
     "typescript": "^5.7.2"
   }

@@ -8,10 +8,12 @@
     "migrate": "prisma migrate deploy",
     "migrate:dev": "prisma migrate dev --name init",
     "import": "tsx import.ts",
+    "seed": "tsx seed.ts",
     "studio": "prisma studio"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "argon2": "^0.45.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

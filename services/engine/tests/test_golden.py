@@ -10,11 +10,17 @@ from app.core.pillars import compute_pillars
 from app.core.power import compute_power
 
 # (y, m, d, hh, year_gz, month_gz, day_gz, hour_gz, day_master, A, B, power)
+# NOTE: the YEAR ganzhi rolls on a FIXED 28 Nov (matches D:\bazi), not 立春. Dates
+# from 28 Nov through early Feb (e.g. 2026-01-02/17, 1996-01-16 below) therefore
+# carry the *next* year's stem/branch — but the MONTH pillar keeps its conventional
+# 立春-based 五虎遁 stem (NOT re-derived from that year): 17 ม.ค. 2569 -> ซิง 0.
 GOLDEN = [
     (2026, 8, 16, 16, "丙午", "丙申", "壬戌", "戊申", "น้ำ", -4, +1, -3),
     (2026, 8, 1, 16, "丙午", "乙未", "丁未", "戊申", "ไฟ", +1, -5, -4),
-    (2026, 1, 17, 16, "乙巳", "己丑", "辛卯", "丙申", "ทอง", -1, 0, -1),
-    (1996, 1, 16, 16, "乙亥", "己丑", "壬子", "戊申", "น้ำ", -6, +2, -4),
+    # 小雪 boundary, reported reference values:
+    (2026, 1, 2, 16, "丙午", "戊子", "丙子", "丙申", "ไฟ", 0, -5, -5),   # ไฟเปี้ย -5
+    (2026, 1, 17, 16, "丙午", "己丑", "辛卯", "丙申", "ทอง", 0, 0, 0),    # ซิง 0
+    (1996, 1, 16, 16, "丙子", "己丑", "壬子", "戊申", "น้ำ", -5, +2, -3),
 ]
 
 

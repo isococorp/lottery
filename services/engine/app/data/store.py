@@ -26,6 +26,19 @@ def _ensure_loaded(path: Optional[str] = None):
             _draws, _report = load_draws(p)
 
 
+def reload(path: Optional[str] = None) -> QualityReport:
+    """Drop the in-memory cache and re-read the workbook from disk.
+
+    Used after the admin appends a new draw to the Excel audit source so that
+    live predictions and walk-forward stats see it without a process restart.
+    """
+    global _draws, _report
+    with _lock:
+        p = path or DEFAULT_PATH
+        _draws, _report = load_draws(p)
+        return _report  # type: ignore
+
+
 def get_draws(path: Optional[str] = None) -> List[Draw]:
     _ensure_loaded(path)
     return _draws  # type: ignore
@@ -34,6 +47,14 @@ def get_draws(path: Optional[str] = None) -> List[Draw]:
 def get_report(path: Optional[str] = None) -> QualityReport:
     _ensure_loaded(path)
     return _report  # type: ignore
+
+
+def draw_on(date) -> Optional[Draw]:
+    """The actual historical draw on `date`, or None if not in the dataset."""
+    for d in get_draws():
+        if d.date == date:
+            return d
+    return None
 
 
 def history_before(date, weekday: Optional[str] = None) -> List[Draw]:

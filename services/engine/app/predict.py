@@ -69,9 +69,26 @@ def predict(dt: datetime.datetime, use_history: bool = True) -> dict:
     # keep school order 4.1..4.5
     results.insert(3, stats_entry)
 
+    # Actual draw for this date (if it exists in the historical dataset) so the UI
+    # can compare the calculated numbers against the real winning numbers.
+    actual = None
+    if use_history:
+        adraw = store.draw_on(dt.date())
+        if adraw is not None:
+            actual = {
+                "date": adraw.date.isoformat(),
+                "six": adraw.six,
+                "top3": adraw.top3,
+                "top2": adraw.top2,
+                "bottom2": adraw.bottom2,
+                "set3": adraw.set3,
+                "time": adraw.time.strftime("%H:%M") if adraw.time else None,
+            }
+
     return {
         "input": {"date": dt.date().isoformat(), "time": dt.strftime("%H:%M")},
         "pillars": p.as_dict(),
         "power": dp.as_dict(),
+        "actual": actual,
         "schools": results,
     }

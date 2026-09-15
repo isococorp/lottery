@@ -10,7 +10,7 @@ import datetime
 import swisseph as swe
 
 from .base import SchoolResult
-from ._swe_helpers import jd_ut, longitude, ascendant
+from ._swe_helpers import jd_ut, longitude, ascendant, ephemeris_source
 
 
 def generate(dt: datetime.datetime) -> SchoolResult:
@@ -33,5 +33,5 @@ def generate(dt: datetime.datetime) -> SchoolResult:
         f"{(Su * 100 + Mo * 10 + As) % 1000:03d}",
     ]
     factors = {"sun_sign": Su, "sun_deg": SuD, "moon_sign": Mo, "moon_deg": MoD,
-               "asc_sign": As, "asc_deg": AsD}
+               "asc_sign": As, "asc_deg": AsD, "ephemeris": ephemeris_source()}
     return SchoolResult("4.17", "Western Astro", top3, top2, bottom2, set3, factors)

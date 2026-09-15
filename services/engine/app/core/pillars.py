@@ -73,6 +73,31 @@ def _hour_stem(day_stem: int, hour_branch: int) -> int:
     return (hs0 + hour_branch) % 10
 
 
+# --- Year boundary (ตรงกับโปรแกรม bazi อ้างอิงที่ D:\bazi) --------------------
+# The reference bazi program rolls the YEAR ganzhi on a FIXED 28 Nov, NOT at 立春
+# (the sxtwl/§C default) nor at the 小雪 solar term. December and 28–30 Nov belong
+# to the next ganzhi year. We override sxtwl's year accordingly; the month stem
+# keeps sxtwl's conventional 立春-based 五虎遁, and day/hour are unaffected.
+#   ref: D:\bazi\app\lib\baziData.js — `if (m===12 || (m===11 && d>=28)) customYear++`
+
+# 五虎遁: year stem -> stem of the 寅 (index 2) month (used by the JDN fallback).
+FIRST_MONTH_STEM = {0: 2, 5: 2, 1: 4, 6: 4, 2: 6, 7: 6, 3: 8, 8: 8, 4: 0, 9: 0}
+
+
+def _bazi_year(y: int, m: int, d: int):
+    """(year_stem, year_branch) with the fixed 28-Nov boundary (matches D:\\bazi).
+
+    Dates in December, or on 28–30 Nov, belong to ganzhi-year Y+1.
+    """
+    gz_year = y + 1 if (m == 12 or (m == 11 and d >= 28)) else y
+    return (gz_year - 4) % 10, (gz_year - 4) % 12
+
+
+def _month_stem_from_year(year_stem: int, month_branch: int) -> int:
+    """Month stem via 五虎遁 from the year stem (JDN fallback only)."""
+    return (FIRST_MONTH_STEM[year_stem] + (month_branch - 2) % 12) % 10
+
+
 # ---------------------------------------------------------------------------
 # JDN fallback (parity with the spec's JS fallback — NOT used when sxtwl loads)
 # ---------------------------------------------------------------------------
@@ -88,16 +113,17 @@ def _fallback_pillars(y: int, m: int, d: int, hh: int) -> Pillars:
     day_stem = (jdn(y, m, d) + 9) % 10
     day_branch = (jdn(y, m, d) + 1) % 12
 
-    solar_year = y - 1 if (m < 2 or (m == 2 and d < 4)) else y
-    year_stem = (solar_year - 4) % 10
-    year_branch = (solar_year - 4) % 12
+    # Year ganzhi rolls at 小雪 (~22 Nov), not 立春 — parity with compute_pillars.
+    year_stem, year_branch = _bazi_year(y, m, d)
 
     jieDOM = [6, 4, 6, 5, 6, 6, 7, 8, 8, 8, 7, 7]
     sm = m if d >= jieDOM[m - 1] else m - 1
     sm = 12 if sm == 0 else sm
     month_branch = sm % 12
-    first_month_stem = {0: 2, 5: 2, 1: 4, 6: 4, 2: 6, 7: 6, 3: 8, 8: 8, 4: 0, 9: 0}[year_stem]
-    month_stem = (first_month_stem + (month_branch - 2) % 12) % 10
+    # Month stem uses the conventional 立春-based year (五虎遁), like sxtwl — it is
+    # NOT re-derived from the 小雪 year (see compute_pillars).
+    lichun_year = y - 1 if (m < 2 or (m == 2 and d < 4)) else y
+    month_stem = _month_stem_from_year((lichun_year - 4) % 10, month_branch)
 
     hb = _hour_branch(hh)
     return Pillars(year_stem, year_branch, month_stem, month_branch,
@@ -114,9 +140,12 @@ def compute_pillars(y: int, m: int, d: int, hh: int, mi: int = 0) -> Pillars:
         return _fallback_pillars(y, m, d, hh)
 
     day = sxtwl.fromSolar(y, m, d)
-    yg = day.getYearGZ()   # switches at 立春 by default
-    mg = day.getMonthGZ()  # switches at 節 by default
+    # Only the YEAR ganzhi rolls at 小雪 (~22 Nov); the MONTH pillar keeps sxtwl's
+    # conventional (立春-based 五虎遁) stem+branch — the source bazi program does NOT
+    # re-derive the month stem from the 小雪 year (confirmed: 17 ม.ค. 2569 → ซิง 0).
+    year_stem, year_branch = _bazi_year(y, m, d)
+    mg = day.getMonthGZ()
     dg = day.getDayGZ()
     hb = _hour_branch(hh)
     hs = _hour_stem(dg.tg, hb)
-    return Pillars(yg.tg, yg.dz, mg.tg, mg.dz, dg.tg, dg.dz, hs, hb, "sxtwl")
+    return Pillars(year_stem, year_branch, mg.tg, mg.dz, dg.tg, dg.dz, hs, hb, "sxtwl")

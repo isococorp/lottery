@@ -69,8 +69,12 @@ def _deterministic_predictions(draws: List[Draw]):
         }
 
 
-def _collect(draws: List[Draw], mode: str):
-    """Build per-school hit flags + baseline probs for bottom2 and set3 metrics."""
+def _collect(draws: List[Draw], mode: str, start=None, end=None):
+    """Build per-school hit flags + baseline probs for bottom2 and set3 metrics.
+
+    `start`/`end` (optional dates) restrict which draws are *scored*; history for
+    the walk-forward school is unaffected (see metrics.in_window).
+    """
     codes = schools.PRODUCTION_CODES
     names = dict(schools.SCHOOL_NAMES)
     b2_hits: Dict[str, list] = {c: [] for c in codes}
@@ -79,8 +83,10 @@ def _collect(draws: List[Draw], mode: str):
     s3_bp: Dict[str, list] = {c: [] for c in codes}
     preds: Dict[str, list] = {c: [] for c in codes}
 
-    # Deterministic schools over every draw.
+    # Deterministic schools over every draw in the scoring window.
     for dr, res in _deterministic_predictions(draws):
+        if not metrics.in_window(dr.date, start, end):
+            continue
         for c in DET_CODES:
             sr = res[c]
             hb = metrics.hit_two(sr.bottom2, dr.bottom2, mode)
@@ -101,6 +107,8 @@ def _collect(draws: List[Draw], mode: str):
     # Stats walk-forward: only after warm-up, learning from prior draws.
     for i, dr in enumerate(draws):
         if i < WARMUP_DRAWS:
+            continue
+        if not metrics.in_window(dr.date, start, end):
             continue
         hist = [d for d in draws[:i] if d.weekday == dr.weekday]
         sr = school_stats_wf.generate(hist)
@@ -124,8 +132,9 @@ def _collect(draws: List[Draw], mode: str):
     return codes, names, b2_hits, b2_bp, s3_hits, s3_bp, preds
 
 
-def run_backtest(draws: List[Draw], mode: str = "permutation") -> List[SchoolBacktest]:
-    codes, names, b2_hits, b2_bp, s3_hits, s3_bp, preds = _collect(draws, mode)
+def run_backtest(draws: List[Draw], mode: str = "permutation",
+                 start=None, end=None) -> List[SchoolBacktest]:
+    codes, names, b2_hits, b2_bp, s3_hits, s3_bp, preds = _collect(draws, mode, start, end)
     out = []
     for c in codes:
         b2 = metrics.summarize(f"{names[c]} 2ล่าง", b2_hits[c], b2_bp[c])

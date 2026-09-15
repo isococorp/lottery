@@ -10,6 +10,20 @@ from scipy.stats import binomtest
 from .baselines import perm_count
 
 
+def in_window(d, start, end) -> bool:
+    """True if draw date `d` falls within the optional [start, end] scoring window.
+
+    Only the *evaluation* set is restricted; walk-forward history stays full, so
+    no-leakage semantics are preserved (a later draw still learns from every
+    draw before it, even ones outside the window).
+    """
+    if start is not None and d < start:
+        return False
+    if end is not None and d > end:
+        return False
+    return True
+
+
 def _multiset_eq(a: str, b: str) -> bool:
     return sorted(a) == sorted(b)
 

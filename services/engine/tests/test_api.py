@@ -17,15 +17,30 @@ def test_health():
     assert r.status_code == 200 and r.json()["status"] == "ok"
 
 
-def test_catalog_has_21_vicha():
+def test_catalog_has_19_vicha():
+    # §4.13/4.14 were removed from the project (spec forbids deterministic modules).
     r = client.get("/schools")
     assert r.status_code == 200
     c = r.json()
-    assert c["total_vicha"] == 21
-    assert c["summary"] == {"production": 18, "backlog": 2, "discipline": 1}
-    # Every backlog vicha is named and honestly not-available (no mock numbers).
-    for v in c["backlog"]:
-        assert v["name"] and v["status"] != "PRODUCTION"
+    assert c["total_vicha"] == 19
+    assert c["summary"] == {"production": 18, "backlog": 0, "discipline": 1}
+    assert c["backlog"] == []
+    # No removed vicha lingers anywhere in the catalog.
+    codes = {v["code"] for v in c["production"]} | {c["discipline"]["code"]}
+    assert "4.13" not in codes and "4.14" not in codes
+
+
+@needs_data
+def test_hit_summary_endpoint():
+    r = client.get("/hit-summary")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["n_draws"] == 708
+    assert len(body["schools"]) == 18
+    for s in body["schools"]:
+        for pos in ("top3", "top2", "bottom2", "set3"):
+            p = s[pos]
+            assert p["exact"] + p["swapped"] <= p["n"]
 
 
 @needs_data
@@ -47,7 +62,7 @@ def test_backtest_endpoint_matches_reference():
     r = client.post("/backtest", json={"mode": "permutation"})
     assert r.status_code == 200
     schools = {s["name"]: s for s in r.json()["schools"]}
-    assert schools["ดวงจีน"]["bottom2"]["hits"] == 20
+    assert schools["ดวงจีน"]["bottom2"]["hits"] == 17  # 小雪 year rule (was 20 under 立春)
     assert schools["สถิติ WF"]["bottom2"]["n"] == 608
 
 

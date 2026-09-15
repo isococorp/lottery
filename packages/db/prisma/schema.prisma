@@ -1,20 +1,27 @@
 // Prisma schema — Tianming Lottery Analyzer (spec §2.1–2.2)
 // HARD RULE (§4.21.4): every lottery number is a String to preserve leading zeros.
-// Excel is the import source only; Postgres is the canonical operational store.
+// Excel is the import source only; DB is the canonical operational store.
+// NOTE: Using SQLite for dev. Switch provider to "postgresql" + restore @db.Date and enums for production.
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+generator webClient {
+  provider = "prisma-client-js"
+  output   = "../../../apps/web/node_modules/.prisma/client"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 /// One historical draw (งวด). Numbers are char/String, never Int.
 model Draw {
   id        Int      @id @default(autoincrement())
-  date      DateTime @unique @db.Date // งวดวันที่
+  date      DateTime @unique // งวดวันที่
   six       String?  // แสดงตัวเลข 6 หลัก
   top3      String?  // 3 บน
   top2      String?  // 2 บน
@@ -43,12 +50,77 @@ model ImportRun {
   reportText   String
 }
 
-/// Optional audit trail of engine calls surfaced through the web app (§4.21.18).
-model AuditLog {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  action    String // predict | backtest | export
-  inputJson String
-  modelStatus String
+/// Engine audit trail (predict/backtest/export calls).
+model EngineAudit {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  action       String // predict | backtest | export
+  inputJson    String
+  modelStatus  String
   failureState String
+}
+
+// ---------------------------------------------------------------------------
+// Membership / Auth / Admin system
+// Role: SUPER_ADMIN | ADMIN | MEMBER
+// UserStatus: ACTIVE | SUSPENDED | DISABLED
+// LogSeverity: DEBUG | INFO | WARNING | ERROR | CRITICAL
+// ---------------------------------------------------------------------------
+
+model User {
+  id                 String     @id @default(uuid())
+  email              String     @unique
+  username           String     @unique
+  passwordHash       String
+  displayName        String
+  role               String     @default("MEMBER")
+  status             String     @default("ACTIVE")
+  createdById        String?
+  createdBy          User?      @relation("CreatedUsers", fields: [createdById], references: [id])
+  createdUsers       User[]     @relation("CreatedUsers")
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  lastLoginAt        DateTime?
+  lastLoginIp        String?
+  failedLoginCount   Int        @default(0)
+  lockedUntil        DateTime?
+  mustChangePassword Boolean    @default(true)
+  sessions           Session[]
+  auditLogs          AuditLog[]
+}
+
+model Session {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  tokenHash String    @unique
+  ipAddress String
+  userAgent String
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  timestamp  DateTime @default(now())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  actorEmail String?
+  action     String
+  targetType String?
+  targetId   String?
+  ipAddress  String
+  userAgent  String
+  method     String?
+  path       String?
+  statusCode Int?
+  beforeState String?
+  afterState  String?
+  metadata    String?
+  severity   String   @default("INFO")
+
+  @@index([userId])
+  @@index([action])
+  @@index([timestamp])
 }
